@@ -90,10 +90,13 @@ No redesign of the front end is required for this step.
   the **final CTA copy** are used verbatim from the project brief.
 - **Testimonials** are illustrative sample content — replace with real
   learner/parent reviews once available.
-- **Privacy Policy and Terms & Conditions** are starting-point placeholder
-  text, not legal advice. Have them reviewed by a qualified professional and
-  adapted to your actual data practices, pricing, and refund policy before
-  publishing.
+- **Privacy Policy and Terms & Conditions** contain real, site-specific
+  content (what data each form actually collects, how FormSubmit is used,
+  a section on learners under 18, Nigerian governing law, etc.) rather than
+  generic filler. They are not legal advice — have them reviewed by a
+  qualified professional before you rely on them, especially for NDPA
+  (Nigeria Data Protection Act) compliance and your actual payment/refund
+  practices once those are finalized.
 - WhatsApp links use the `wa.me` format (e.g. `https://wa.me/2348025863243`),
   so they open a chat directly on both mobile and desktop.
 
