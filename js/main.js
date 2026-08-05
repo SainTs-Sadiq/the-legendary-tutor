@@ -22,6 +22,25 @@
    change. To connect a real backend + database instead, replace the
    fetch() call inside submitForm() with a call to your own API route —
    the FormData already contains every field, keyed and ready to persist.
+
+   SECOND, PARALLEL LOG: GOOGLE FORMS → GOOGLE SHEETS
+   -----------------------------------------------------------------------
+   Alongside the FormSubmit email, every submission is also posted to a
+   plain Google Form (see FORMS_CONFIG below) — one per site form. Each
+   Google Form's responses can be linked to a Google Sheet (Responses tab
+   → the Sheets icon), giving searchable, filterable records instead of
+   submissions living only in an inbox.
+
+   This is intentionally a "fire and forget" secondary call: it never
+   blocks the main submission, and if it fails for any reason, the person
+   submitting the form never sees an error — the email side (FormSubmit)
+   remains the source of truth for whether a submission succeeded.
+
+   Because a Google Form has a fixed set of fields, and our real forms have
+   more fields than that, most of each submission is bundled into one
+   "Full Details" text block rather than getting its own Sheet column. See
+   README.md for the full field mapping and how to rebuild this if the
+   Google Forms are ever recreated (their field IDs would change).
    ========================================================================== */
 
 const DESTINATION_EMAIL = "adinoyi4all@gmail.com";
@@ -124,6 +143,10 @@ async function handleSubmit(e, form) {
   try {
     const formData = new FormData(form);
 
+    // Fire-and-forget: log to Google Sheets in parallel. Never awaited for
+    // its own sake, never allowed to affect the email submission below.
+    logToSheet(form, formData);
+
     // FormSubmit-specific configuration fields (kept out of the visible form).
     formData.append("_subject", form.dataset.subject || "New submission — The Legendary Tutor");
     formData.append("_captcha", "false");
@@ -173,4 +196,125 @@ function showStatus(el, type, title, body) {
 function hideStatus(el) {
   if (!el) return;
   el.classList.remove("show");
+}
+
+/* ---------- Google Forms logging (secondary, best-effort) ---------- */
+// Each entry below was pulled from that form's "pre-fill" link — see
+// README.md if these ever need to be regenerated (e.g. the form is
+// recreated and gets new field IDs).
+const FORMS_CONFIG = {
+  requestTutor: {
+    actionUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfyyMKFJ5_mkRTnKdt3XTEcTikHgKH7oRm1I9x9sdNGRJZvlA/formResponse",
+    entries: {
+      fullName: "entry.1748295679",
+      email: "entry.1869062530",
+      subjects: "entry.1281806503",
+      phone: "entry.1396144770",
+      budget: "entry.1177135349",
+      details: "entry.158702295",
+    },
+  },
+  becomeTutor: {
+    actionUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfyU9X4TmjEzU9s8ItRmsk3XdrUdIkouSmcs6FOfQv2SakZVA/formResponse",
+    entries: {
+      fullName: "entry.1532155404",
+      email: "entry.1964928192",
+      phone: "entry.1926454829",
+      subjectsTaught: "entry.228861162",
+      experience: "entry.600885577",
+      details: "entry.358808385",
+    },
+  },
+  contact: {
+    actionUrl: "https://docs.google.com/forms/d/e/1FAIpQLSfNXhAzuknPo5LSRXDH-ZYHSUcbySfG4QUTbwlaJICzNV3J8A/formResponse",
+    entries: {
+      fullName: "entry.765864001",
+      email: "entry.2083078653",
+      subject: "entry.98096301",
+      message: "entry.2044177326",
+    },
+  },
+};
+
+function logToSheet(form, formData) {
+  const formType = form.dataset.form;
+  const config = FORMS_CONFIG[formType];
+  if (!config) return;
+
+  try {
+    const body = buildGoogleFormBody(formType, config, formData);
+    // Google Forms doesn't send back CORS headers, so this has to be a
+    // "no-cors" request — the response is unreadable, but the submission
+    // still goes through. That's fine here: purely fire-and-forget.
+    fetch(config.actionUrl, { method: "POST", mode: "no-cors", body }).catch(() => {
+      /* best-effort only — the email submission is the source of truth */
+    });
+  } catch (err) {
+    /* best-effort only */
+  }
+}
+
+// Pulls every value for a given field name out of FormData (joining
+// checkbox groups with a comma) and returns it as one string.
+function getAll(formData, key) {
+  return formData.getAll(key).filter(Boolean).join(", ");
+}
+
+function buildGoogleFormBody(formType, config, formData) {
+  const body = new URLSearchParams();
+  const e = config.entries;
+
+  if (formType === "requestTutor") {
+    body.append(e.fullName, getAll(formData, "Full Name"));
+    body.append(e.email, getAll(formData, "Email Address"));
+    body.append(e.phone, getAll(formData, "Phone Number"));
+    body.append(e.subjects, getAll(formData, "Subjects"));
+    body.append(e.budget, getAll(formData, "Budget"));
+    body.append(e.details, [
+      `Preferred Contact: ${getAll(formData, "Preferred Contact Method")}`,
+      `Academic Level: ${getAll(formData, "Academic Level")}`,
+      `Examination: ${getAll(formData, "Examination")}`,
+      `Lesson Type: ${getAll(formData, "Preferred Lesson Type")}`,
+      `Preferred Days: ${getAll(formData, "Preferred Days")}`,
+      `Preferred Time: ${getAll(formData, "Preferred Time")}`,
+      `Location: ${getAll(formData, "Location")}`,
+      `Learning Goals: ${getAll(formData, "Learning Goals")}`,
+      `Additional Notes: ${getAll(formData, "Additional Notes")}`,
+    ].join("\n"));
+  }
+
+  if (formType === "becomeTutor") {
+    const cv = formData.get("CV");
+    const certs = formData.getAll("Certificates")
+      .filter((f) => f && f.name)
+      .map((f) => f.name)
+      .join(", ");
+
+    body.append(e.fullName, getAll(formData, "Full Name"));
+    body.append(e.email, getAll(formData, "Email Address"));
+    body.append(e.phone, getAll(formData, "Phone Number"));
+    body.append(e.subjectsTaught, getAll(formData, "Subjects Taught"));
+    body.append(e.experience, getAll(formData, "Years of Experience"));
+    body.append(e.details, [
+      `Gender: ${getAll(formData, "Gender")}`,
+      `Location: ${getAll(formData, "Location")}`,
+      `Academic Levels Taught: ${getAll(formData, "Academic Levels Taught")}`,
+      `Teaching Mode: ${getAll(formData, "Teaching Mode")}`,
+      `Qualifications: ${getAll(formData, "Qualifications")}`,
+      `CV Filename: ${cv && cv.name ? cv.name : ""}`,
+      `Certificates: ${certs}`,
+      `Availability: ${getAll(formData, "Availability")}`,
+      `Expected Pay: ${getAll(formData, "Expected Pay")}`,
+      `Personal Statement: ${getAll(formData, "Personal Statement")}`,
+    ].join("\n"));
+  }
+
+  if (formType === "contact") {
+    body.append(e.fullName, getAll(formData, "Full Name"));
+    body.append(e.email, getAll(formData, "Email Address"));
+    body.append(e.subject, getAll(formData, "Subject"));
+    body.append(e.message, getAll(formData, "Message"));
+  }
+
+  return body;
 }

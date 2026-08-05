@@ -19,7 +19,7 @@ legendary-tutor/
 ├── privacy.html            Privacy Policy (placeholder — see note below)
 ├── terms.html               Terms & Conditions (placeholder — see note below)
 ├── css/style.css           All styling (design tokens, layout, components)
-├── js/main.js               Nav toggle, FAQ accordion, file inputs, form submission
+├── js/main.js               Nav toggle, FAQ accordion, file inputs, form submission (+ Google Forms logging)
 └── assets/favicon.svg      Brand monogram favicon
 ```
 
@@ -28,6 +28,50 @@ legendary-tutor/
 No server or build tools required. Just double-click `index.html`, or open the
 folder with a live-reload extension (e.g. VS Code's "Live Server") for the
 smoothest experience while editing.
+
+## Google Forms → Google Sheets logging (searchable records, alongside email)
+
+Every submission is sent two places: FormSubmit (email, as before) and one
+of three plain Google Forms, so you get searchable, filterable records
+without a database or backend — and it's entirely buildable from a phone,
+since it never touches the Apps Script code editor.
+
+**The three forms (already built and wired in):**
+
+| Site form | Google Form | Fields |
+|---|---|---|
+| Request a Tutor | Tutor Requests | Full Name, Email Address, Phone Number, Subjects, Budget, Full Details |
+| Become a Tutor | Tutor Applications | Full Name, Email Address, Phone Number, Subjects Taught, Years of Experience, Full Details |
+| Contact | Contact Messages | Full Name, Email Address, Subject, Message |
+
+Because a Google Form only has a handful of fields, most of what each site
+form actually collects (academic level, exam, location, qualifications,
+availability, etc.) is bundled into one "Full Details" text block per
+submission rather than getting its own column. It's still fully readable
+and searchable — just not separately filterable the way Full Name or
+Budget are.
+
+**To see responses as a spreadsheet:** open each Google Form → the
+**Responses** tab → tap the green Sheets icon → **Create a new
+spreadsheet**. That links a live-updating Sheet to that form. Do this once
+per form.
+
+**How the wiring works:** `js/main.js` has a `FORMS_CONFIG` object with
+each form's submission URL and field IDs. Those field IDs (`entry.xxxxx`)
+were pulled from each form's "pre-fill link" (Google Forms' ⋮ menu →
+Pre-fill form → fill in each field → Get Link). If a form is ever deleted
+and recreated, its field IDs will change and `FORMS_CONFIG` needs updating
+the same way.
+
+Like the FormSubmit call, this is a "fire and forget" secondary request:
+if it fails for any reason, the person submitting the form never sees an
+error. FormSubmit remains the source of truth for whether a submission
+succeeded.
+
+**Note on file uploads:** a Google Form field can't hold an actual file,
+so the CV/Certificates fields on the Become a Tutor form are logged as
+filenames only, inside "Full Details". The real files still arrive as
+email attachments via FormSubmit, same as always.
 
 ## How form submissions work right now
 
