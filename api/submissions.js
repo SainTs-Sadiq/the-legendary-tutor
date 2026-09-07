@@ -1,13 +1,14 @@
 const crypto = require('crypto');
 const { IncomingForm } = require('formidable');
 const fs = require('fs');
+const { verify } = require('./admin/login');
 const WINDOW_MS=15*60*1000,MAX_REQUESTS=20,MAX_FILE=5*1024*1024;
 const buckets=new Map();
 const json=(res,s,d)=>{res.status(s).setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(JSON.stringify(d))};
 const ip=req=>String(req.headers['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();
 const limited=k=>{const n=Date.now(),x=buckets.get(k);if(!x||n-x.started>WINDOW_MS){buckets.set(k,{started:n,count:1});return false}x.count++;return x.count>MAX_REQUESTS};
 const clean=(v,n=5000)=>Array.isArray(v)?clean(v[0],n):typeof v==='string'?v.trim().slice(0,n):'';
-const admin=req=>{const expected=clean(process.env.ADMIN_API_KEY||'',500);const supplied=clean(String(req.headers.authorization||'').replace(/^Bearer\s+/i,''),500);return Boolean(expected&&supplied&&supplied===expected)};
+const admin=req=>verify(req);
 function originOK(req){const a=(process.env.ALLOWED_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean);return !a.length||!req.headers.origin||a.includes(req.headers.origin)}
 async function supabase(path,opts={}){const b=process.env.SUPABASE_URL,k=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!b||!k)return null;const r=await fetch(`${b.replace(/\/$/,'')}/rest/v1/${path}`,{...opts,headers:{apikey:k,Authorization:`Bearer ${k}`,'Content-Type':'application/json',Prefer:'return=representation',...(opts.headers||{})}});if(!r.ok)throw Error(`Database request failed: ${r.status}`);return r.status===204?null:r.json()}
 function parseMultipart(req){return new Promise((resolve,reject)=>{new IncomingForm({maxFileSize:MAX_FILE,maxTotalFileSize:MAX_FILE*2,allowEmptyFiles:false,multiples:true}).parse(req,(e,f,files)=>e?reject(e):resolve({fields:f,files}))})}
