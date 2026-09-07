@@ -1,0 +1,102 @@
+/* THE LEGENDARY TUTOR — Mobile optimization layer */
+
+/* Prevent accidental horizontal overflow from long content, grids and media. */
+html, body { max-width: 100%; overflow-x: hidden; }
+body { min-width: 0; }
+
+/* Comfortable mobile gutters. */
+.container { padding-inline: 18px; }
+
+/* Touch targets: keep controls comfortable without making the UI bulky. */
+button, .btn, input[type="submit"], input[type="button"], select { min-height: 44px; }
+
+/* Navigation */
+@media (max-width: 960px) {
+  :root { --nav-h: 68px; }
+  .navbar .container { padding-inline: 16px; gap: 12px; }
+  .brand { min-width: 0; font-size: 1.02rem; gap: 8px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .nav-cta { gap: 6px; }
+  .nav-cta .btn { padding: 10px 14px; font-size: .82rem; }
+  .nav-toggle { min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+  .nav-links { top: var(--nav-h); padding: 8px 18px 18px; max-height: calc(100dvh - var(--nav-h)); overflow-y: auto; }
+  .nav-links a { padding: 14px 4px; }
+}
+
+/* Hero */
+@media (max-width: 900px) {
+  .hero { padding: 42px 0 64px; }
+  .hero .container { gap: 30px; }
+  .hero-art { width: min(100%, 360px); }
+  .hero h1 { font-size: clamp(2.15rem, 10vw, 3rem); line-height: 1.06; }
+  .hero .tagline { font-size: 1.08rem; }
+  .hero p.lead { font-size: .98rem; }
+  .hero-ctas { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 24px; }
+  .hero-ctas .btn { width: 100%; }
+  .hero-stats { gap: 16px 24px; margin-top: 32px; }
+}
+
+/* General sections */
+@media (max-width: 768px) {
+  section { padding: 56px 0; }
+  .section-head { margin-bottom: 34px; }
+  .section-head p { font-size: .96rem; }
+  .eyebrow { font-size: .7rem; letter-spacing: .11em; }
+  .card { padding: 24px 20px; border-radius: 18px; }
+  .grid { gap: 16px; }
+}
+
+/* Forms: one-column, full-width controls and no tiny desktop spacing. */
+@media (max-width: 700px) {
+  form { width: 100%; }
+  .form-grid, .form-row, .fields, .field-grid { grid-template-columns: 1fr !important; }
+  .form-group, .field, .form-field { min-width: 0; }
+  input, textarea, select { width: 100%; max-width: 100%; }
+  textarea { min-height: 140px; }
+  input[type="checkbox"], input[type="radio"] { width: auto; min-height: 0; }
+  .btn { padding: 13px 20px; }
+  .file-drop { min-height: 120px; padding: 20px 14px; }
+}
+
+/* Make long labels, email addresses and URLs wrap instead of widening the page. */
+@media (max-width: 640px) {
+  h1 { font-size: clamp(2rem, 9.5vw, 2.7rem); }
+  h2 { font-size: clamp(1.6rem, 7.5vw, 2.15rem); }
+  h3 { font-size: 1.18rem; }
+  p, li, label, .card, .section-head { overflow-wrap: anywhere; }
+  .container { padding-inline: 16px; }
+  .btn { white-space: normal; text-align: center; }
+  .hero-eyebrow { max-width: 100%; font-size: .76rem; padding-right: 12px; }
+}
+
+/* FAQ and other expandable content should never create horizontal overflow. */
+.faq-q, .faq-item, .faq-a, .faq-a p { min-width: 0; overflow-wrap: anywhere; }
+
+/* Footer */
+@media (max-width: 700px) {
+  footer .grid, .footer-grid, .footer-columns { grid-template-columns: 1fr !important; }
+  footer { text-align: left; }
+}
+
+/* Admin dashboard */
+@media (max-width: 800px) {
+  .admin-wrap, .admin-container { width: 100%; padding-inline: 16px !important; }
+  .admin-table-wrap, .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { min-width: 680px; }
+  .admin-toolbar { flex-direction: column; align-items: stretch !important; }
+}
+
+/* iOS Safari: avoid automatic text zoom and preserve usable control sizing. */
+input, textarea, select { font-size: 16px; }
+
+/* Respect devices with a home-indicator/notch. */
+@supports (padding: max(0px)) {
+  .navbar .container { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  footer { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+
+/* Reduce hover-only movement on touch devices. */
+@media (hover: none) and (pointer: coarse) {
+  .card:hover, .btn-primary:hover, .btn-outline:hover { transform: none; box-shadow: var(--shadow-md); }
+}
