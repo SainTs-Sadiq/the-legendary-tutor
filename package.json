@@ -1,5 +1,5 @@
 {
   "name":"the-legendary-tutor","private":true,"version":"1.0.0",
-  "scripts":{"check":"node --check api/submissions.js && node --check api/uploads.js"},
+  "scripts":{"check":"node --check api/submissions.js && node --check api/uploads.js && node --check api/admin/login.js && node --check api/admin/logout.js"},
   "dependencies":{"@vercel/node":"^5.4.0","formidable":"^3.5.4"}
 }
